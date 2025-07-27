@@ -21,7 +21,7 @@ jobs:
       matrix:
         rust:
           - version: stable
-          - version: 1.81.0 # MSRV
+          - version: 1.88.0 # MSRV
             msrv: true
         features:
           - --no-default-features

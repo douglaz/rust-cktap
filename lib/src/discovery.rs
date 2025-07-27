@@ -1,4 +1,4 @@
-use crate::usb_transport::{find_ccid_endpoints, UsbTransport};
+use crate::usb_transport::{UsbTransport, find_ccid_endpoints};
 use crate::{CkTapCard, CkTransport, Error};
 use log::{debug, info};
 use rusb::{Context, Device, DeviceDescriptor, DeviceHandle, UsbContext};
@@ -232,8 +232,10 @@ mod tests {
         assert_eq!(COINKITE_VENDOR_ID, 0xD13E);
 
         // Test product lookup
-        assert!(COINKITE_PRODUCTS
-            .iter()
-            .any(|(pid, name)| { *pid == 0xCC10 && *name == "TAPSIGNER" }));
+        assert!(
+            COINKITE_PRODUCTS
+                .iter()
+                .any(|(pid, name)| { *pid == 0xCC10 && *name == "TAPSIGNER" })
+        );
     }
 }
