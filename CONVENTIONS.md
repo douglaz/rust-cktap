@@ -79,6 +79,15 @@ let data = parse_data(input)
 - **`bail!("...")`**: Use for early returns with custom error messages
 - **`ensure!(condition, "...")`**: Use for validation checks that should fail with specific messages
 
+**For Option types**: Use `.context()` instead of `.ok_or_else(|| anyhow!(...))`:
+```rust
+// GOOD - Clean and idiomatic
+let value = optional_value.context("Value not found")?;
+
+// BAD - Verbose and awkward
+let value = optional_value.ok_or_else(|| anyhow!("Value not found"))?;
+```
+
 **Note**: Some external crate error types may not implement the traits required for `.context()`. In these cases, continue using `.map_err(|e| anyhow!("..."))` as needed.
 
 ### Incorrect Usage:

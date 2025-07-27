@@ -236,9 +236,7 @@ async fn handle_satscard_command<T: CkTransport>(
             output_response(result, format)?;
         }
         SatsCardCommand::New => {
-            let slot = sc
-                .slot()
-                .ok_or_else(|| anyhow::anyhow!("No available slot"))?;
+            let slot = sc.slot().context("No available slot")?;
             let chain_code = Some(rand_chaincode(rng));
             let cvc = get_cvc_from_env_or_prompt().context("Failed to get CVC")?;
 
@@ -253,9 +251,7 @@ async fn handle_satscard_command<T: CkTransport>(
             output_response(success_response(result), format)?;
         }
         SatsCardCommand::Unseal => {
-            let slot = sc
-                .slot()
-                .ok_or_else(|| anyhow::anyhow!("No available slot"))?;
+            let slot = sc.slot().context("No available slot")?;
             let cvc = get_cvc_from_env_or_prompt().context("Failed to get CVC")?;
 
             let response = sc
