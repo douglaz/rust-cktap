@@ -45,11 +45,7 @@ pub async fn find_first() -> Result<CkTapCard<UsbTransport>, Error> {
 
     // If no Coinkite device found, try any CCID device
     // Prioritize certain readers that are known to work well
-    let devices: Vec<_> = context
-        .devices()
-        .map_err(Error::Usb)?
-        .iter()
-        .collect();
+    let devices: Vec<_> = context.devices().map_err(Error::Usb)?.iter().collect();
 
     // First try OMNIKEY readers (known to work well)
     for device in &devices {
@@ -176,9 +172,7 @@ fn open_ccid_device(device: &Device<Context>) -> Result<UsbTransport, Error> {
     let handle = device.open().map_err(Error::Usb)?;
 
     // Find the CCID interface
-    let config = device
-        .active_config_descriptor()
-        .map_err(Error::Usb)?;
+    let config = device.active_config_descriptor().map_err(Error::Usb)?;
 
     for interface in config.interfaces() {
         for descriptor in interface.descriptors() {
@@ -194,9 +188,7 @@ fn open_ccid_device(device: &Device<Context>) -> Result<UsbTransport, Error> {
                 }
 
                 // Claim the interface
-                handle
-                    .claim_interface(interface_num)
-                    .map_err(Error::Usb)?;
+                handle.claim_interface(interface_num).map_err(Error::Usb)?;
 
                 // Find endpoints
                 let (endpoint_out, endpoint_in) = find_ccid_endpoints(&handle, interface_num)?;

@@ -120,12 +120,12 @@ async fn main() -> Result<(), Error> {
                         .new_slot(slot, chain_code, cvc_value.as_ref().unwrap())
                         .await
                         .unwrap();
-                    println!("{}", response)
+                    println!("{response}")
                 }
                 SatsCardCommand::Unseal => {
                     let slot = sc.slot().expect("current slot number");
                     let response = &sc.unseal(slot, cvc_value.as_ref().unwrap()).await.unwrap();
-                    println!("{}", response)
+                    println!("{response}")
                 }
                 SatsCardCommand::Derive => {
                     dbg!(&sc.derive().await);
@@ -157,7 +157,7 @@ async fn main() -> Result<(), Error> {
                             println!(
                                 "Derived public key at path m/{}:",
                                 path.iter()
-                                    .map(|&p| format!("{}'", p))
+                                    .map(|&p| format!("{p}'"))
                                     .collect::<Vec<_>>()
                                     .join("/")
                             );
@@ -167,7 +167,7 @@ async fn main() -> Result<(), Error> {
                             println!("Public key: {}", pubkey_hex.as_hex());
 
                             // Convert to Bitcoin address (assuming native segwit for BIP84)
-                            if path.len() >= 1 && path[0] == 84 {
+                            if !path.is_empty() && path[0] == 84 {
                                 if let Ok(pubkey) = bitcoin::PublicKey::from_slice(pubkey_hex) {
                                     if let Ok(compressed) =
                                         bitcoin::CompressedPublicKey::try_from(pubkey)
@@ -176,31 +176,31 @@ async fn main() -> Result<(), Error> {
                                             &compressed,
                                             bitcoin::Network::Bitcoin,
                                         );
-                                        println!("Bitcoin address (mainnet): {}", address);
+                                        println!("Bitcoin address (mainnet): {address}");
 
                                         let testnet_address = bitcoin::Address::p2wpkh(
                                             &compressed,
                                             bitcoin::Network::Testnet,
                                         );
-                                        println!("Bitcoin address (testnet): {}", testnet_address);
+                                        println!("Bitcoin address (testnet): {testnet_address}");
                                     }
                                 }
                             }
                         }
                         Err(e) => {
-                            eprintln!("Error deriving key: {:?}", e);
+                            eprintln!("Error deriving key: {e:?}");
                         }
                     }
                 }
 
                 TapSignerCommand::Backup => {
                     let response = &ts.backup(cvc_value.as_ref().unwrap()).await;
-                    println!("{:?}", response);
+                    println!("{response:?}");
                 }
 
                 TapSignerCommand::Change { new_cvc } => {
                     let response = &ts.change(&new_cvc, cvc_value.as_ref().unwrap()).await;
-                    println!("{:?}", response);
+                    println!("{response:?}");
                 }
                 TapSignerCommand::Sign { to_sign } => {
                     let digest: [u8; 32] =
@@ -208,7 +208,7 @@ async fn main() -> Result<(), Error> {
                             .to_byte_array();
 
                     let response = &ts.sign(digest, vec![], cvc_value.as_ref().unwrap()).await;
-                    println!("{:?}", response);
+                    println!("{response:?}");
                 }
             }
         }
@@ -238,7 +238,7 @@ where
     C: Read<T>,
 {
     match card.read(cvc).await {
-        Ok(resp) => println!("{}", resp),
+        Ok(resp) => println!("{resp}"),
         Err(e) => {
             dbg!(&e);
             println!("Failed to read with error: ")

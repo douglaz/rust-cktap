@@ -1,8 +1,8 @@
-use rust_cktap::discovery;
-use rust_cktap::CkTapCard;
+use cktap_direct::discovery;
+use cktap_direct::CkTapCard;
 
 #[tokio::main]
-async fn main() -> Result<(), rust_cktap::Error> {
+async fn main() -> Result<(), cktap_direct::Error> {
     env_logger::init();
 
     println!("Searching for CCID devices...");
@@ -17,19 +17,19 @@ async fn main() -> Result<(), rust_cktap::Error> {
                     device.vendor_id, device.product_id
                 );
                 if let Some(manufacturer) = device.manufacturer {
-                    println!("    Manufacturer: {}", manufacturer);
+                    println!("    Manufacturer: {manufacturer}");
                 }
                 if let Some(product) = device.product {
-                    println!("    Product: {}", product);
+                    println!("    Product: {product}");
                 }
                 if let Some(serial) = device.serial {
-                    println!("    Serial: {}", serial);
+                    println!("    Serial: {serial}");
                 }
                 println!("    Coinkite device: {}", device.is_coinkite);
             }
         }
         Err(e) => {
-            eprintln!("Error listing devices: {}", e);
+            eprintln!("Error listing devices: {e}");
         }
     }
 
@@ -39,7 +39,7 @@ async fn main() -> Result<(), rust_cktap::Error> {
     let card = match discovery::find_first().await {
         Ok(card) => card,
         Err(e) => {
-            eprintln!("Error: {}", e);
+            eprintln!("Error: {e}");
             eprintln!("\nMake sure:");
             eprintln!("- Your card reader is connected");
             eprintln!("- You have permissions to access USB devices");
@@ -49,7 +49,7 @@ async fn main() -> Result<(), rust_cktap::Error> {
     };
 
     println!("Successfully connected!");
-    println!("Card type: {:?}", card);
+    println!("Card type: {card:?}");
 
     // Try to get status
     match card {
@@ -62,16 +62,16 @@ async fn main() -> Result<(), rust_cktap::Error> {
                     println!("  Version: {}", status.ver);
                     println!("  Birth: {}", status.birth);
                     if let Some(path) = status.path {
-                        println!("  Path: {:?}", path);
+                        println!("  Path: {path:?}");
                     }
                     println!("  Card nonce: {:02x?}", status.card_nonce);
                 }
                 Err(e) => {
-                    eprintln!("Error getting status: {}", e);
+                    eprintln!("Error getting status: {e}");
                 }
             }
         }
-        CkTapCard::SatsCard(mut sc) => {
+        CkTapCard::SatsCard(sc) => {
             println!("\nSatsCard detected!");
             println!("Card details:");
             println!("  Protocol: {}", sc.proto);
@@ -79,7 +79,7 @@ async fn main() -> Result<(), rust_cktap::Error> {
             println!("  Birth: {}", sc.birth);
             println!("  Slots: {:?}", sc.slots);
             if let Some(addr) = &sc.addr {
-                println!("  Address: {}", addr);
+                println!("  Address: {addr}");
             }
         }
         CkTapCard::SatsChip(mut ts) => {
@@ -92,7 +92,7 @@ async fn main() -> Result<(), rust_cktap::Error> {
                     println!("  Birth: {}", status.birth);
                 }
                 Err(e) => {
-                    eprintln!("Error getting status: {}", e);
+                    eprintln!("Error getting status: {e}");
                 }
             }
         }

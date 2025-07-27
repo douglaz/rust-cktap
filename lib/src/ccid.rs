@@ -309,7 +309,7 @@ mod tests {
         // Copy packed fields to local variables to avoid unaligned access
         let message_type = cmd.header.message_type;
         let length = cmd.header.length;
-        
+
         assert_eq!(message_type, MessageType::PcToRdrXfrBlock as u8);
         assert_eq!(length, 4);
         assert_eq!(cmd.data, apdu);
