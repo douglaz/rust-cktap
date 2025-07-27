@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use strum::{Display, EnumString, VariantNames};
 
 /// Output format for CLI commands
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, Display, VariantNames)]
+#[strum(serialize_all = "lowercase")]
 pub enum OutputFormat {
     Json,
     Plain,

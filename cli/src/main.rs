@@ -20,7 +20,7 @@ use std::io::Write;
 #[command(author, version = option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"), about, long_about = None, propagate_version = true)]
 struct Cli {
     /// Output format
-    #[arg(long, value_enum, default_value = "json", global = true)]
+    #[arg(long, value_parser = clap::value_parser!(OutputFormat), default_value = "json", global = true)]
     format: OutputFormat,
 
     #[command(subcommand)]
@@ -99,19 +99,6 @@ enum TapSignerCommand {
         /// Data to sign (will be hashed with SHA256)
         to_sign: String,
     },
-}
-
-impl clap::ValueEnum for OutputFormat {
-    fn value_variants<'a>() -> &'a [Self] {
-        &[OutputFormat::Json, OutputFormat::Plain]
-    }
-
-    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
-        Some(match self {
-            OutputFormat::Json => clap::builder::PossibleValue::new("json"),
-            OutputFormat::Plain => clap::builder::PossibleValue::new("plain"),
-        })
-    }
 }
 
 #[tokio::main]
