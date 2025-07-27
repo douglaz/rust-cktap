@@ -1,13 +1,13 @@
-/// CLI for rust-cktap
+/// CLI for cktap-direct
 use clap::{Parser, Subcommand};
 use rpassword::read_password;
-use rust_cktap::commands::{CkTransport, Read};
+use cktap_direct::commands::{CkTransport, Read};
 #[cfg(feature = "emulator")]
-use rust_cktap::emulator;
-use rust_cktap::discovery;
-use rust_cktap::secp256k1::hashes::{Hash as _, hex::DisplayHex};
-use rust_cktap::secp256k1::rand;
-use rust_cktap::{apdu::Error, commands::Certificate, rand_chaincode, CkTapCard};
+use cktap_direct::emulator;
+use cktap_direct::discovery;
+use cktap_direct::secp256k1::hashes::{Hash as _, hex::DisplayHex};
+use cktap_direct::secp256k1::rand;
+use cktap_direct::{apdu::Error, commands::Certificate, rand_chaincode, CkTapCard};
 use std::io;
 use std::io::Write;
 
@@ -183,7 +183,7 @@ async fn main() -> Result<(), Error> {
                 }
                 TapSignerCommand::Sign { to_sign } => {
                     let digest: [u8; 32] =
-                        rust_cktap::secp256k1::hashes::sha256::Hash::hash(to_sign.as_bytes())
+                        cktap_direct::secp256k1::hashes::sha256::Hash::hash(to_sign.as_bytes())
                             .to_byte_array();
 
                     let response = &ts.sign(digest, vec![], cvc_value.as_ref().unwrap()).await;

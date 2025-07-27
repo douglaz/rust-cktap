@@ -1,7 +1,7 @@
 uniffi::setup_scaffolding!();
 
-use rust_cktap::apdu::{AppletSelect, CommandApdu, ResponseApdu, StatusResponse};
-use rust_cktap::{rand_nonce as core_rand_nonce, Error as CoreError};
+use cktap_direct::apdu::{AppletSelect, CommandApdu, ResponseApdu, StatusResponse};
+use cktap_direct::{rand_nonce as core_rand_nonce, Error as CoreError};
 use std::fmt::Debug;
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]

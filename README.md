@@ -1,4 +1,4 @@
-# rust-cktap (Direct USB Fork)
+# cktap-direct
 
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/notmandatory/rust-cktap/blob/master/LICENSE)
 [![CI](https://github.com/notmandatory/rust-cktap/actions/workflows/test.yml/badge.svg)](https://github.com/notmandatory/rust-cktap/actions/workflows/test.yml)
@@ -7,9 +7,9 @@
 A Rust implementation of the [Coinkite Tap Protocol](https://github.com/coinkite/coinkite-tap-proto) (cktap)
 for use with [SATSCARD], [TAPSIGNER], and [SATSCHIP] products.
 
-## Fork Differences
+## Fork Overview
 
-This fork replaces the PC/SC dependency with a direct USB CCID implementation. The main differences from upstream are:
+`cktap-direct` is a fork of [rust-cktap](https://github.com/notmandatory/rust-cktap) that replaces the PC/SC dependency with a direct USB CCID implementation. The main differences from upstream are:
 
 - **Direct USB Access**: Uses `rusb` (libusb wrapper) instead of PC/SC
 - **Static Binary Support**: Can compile to fully static musl binaries
@@ -74,9 +74,9 @@ It is up to the crate user to send and receive the raw cktap APDU messages via N
 #### Run CLI
 
 ```
-cargo run -p cktap-cli -- --help
-cargo run -p cktap-cli -- certs
-cargo run -p cktap-cli -- read
+cargo run -p cktap-direct-cli -- --help
+cargo run -p cktap-direct-cli -- certs
+cargo run -p cktap-direct-cli -- read
 ```
 
 ## Minimum Supported Rust Version (MSRV)
