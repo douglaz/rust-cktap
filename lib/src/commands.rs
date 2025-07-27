@@ -261,7 +261,7 @@ mod tests {
         let rng = &mut rand::thread_rng();
         let chain_code = rand_chaincode(rng);
 
-        let emulator = find_emulator().await.unwrap();
+        let emulator = find_emulator().await.expect("Failed to find emulator");
         match emulator {
             CkTapCard::SatsCard(mut sc) => {
                 let current_slot = sc.slots.0;

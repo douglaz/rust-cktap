@@ -286,7 +286,7 @@ mod tests {
     fn test_header_conversion() {
         let header = CcidHeader::new(MessageType::PcToRdrXfrBlock, 5, 0, 1);
         let bytes = header.to_bytes();
-        let parsed = CcidHeader::from_bytes(&bytes).unwrap();
+        let parsed = CcidHeader::from_bytes(&bytes).expect("Failed to parse CCID header");
 
         assert_eq!(header.message_type, parsed.message_type);
         // Copy fields to avoid unaligned reference to packed field

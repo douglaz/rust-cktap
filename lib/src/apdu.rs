@@ -142,8 +142,8 @@ pub trait CommandApdu {
     {
         let mut command = Vec::new();
         // CBOR serialization of well-formed command structs should never fail
-        // This is acceptable per CONVENTIONS.md as it's infallible by construction
-        into_writer(&self, &mut command).unwrap();
+        // This should never fail as we're writing to a Vec<u8>
+        into_writer(&self, &mut command).expect("Failed to serialize command to CBOR");
         build_apdu(&CBOR_CLA_INS_P1P2, command.as_slice())
     }
 }
@@ -326,7 +326,11 @@ fn unzip(encoded: &[u8], session_key: SharedSecret) -> Vec<u8> {
 
 impl fmt::Display for ReadResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "pubkey: {}", self.pubkey.to_lower_hex_string())
+        write!(
+            f,
+            "pubkey: {pubkey}",
+            pubkey = self.pubkey.to_lower_hex_string()
+        )
     }
 }
 
@@ -778,7 +782,7 @@ impl ResponseApdu for NewResponse {}
 
 impl fmt::Display for NewResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "slot {}", self.slot)
+        writeln!(f, "slot {slot}", slot = self.slot)
     }
 }
 

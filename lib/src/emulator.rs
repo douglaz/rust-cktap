@@ -58,7 +58,7 @@ pub mod test {
 
     #[tokio::test]
     pub async fn test_transmit() {
-        let emulator = find_emulator().await.unwrap();
+        let emulator = find_emulator().await.expect("Failed to find emulator");
         dbg!(emulator);
     }
 }
