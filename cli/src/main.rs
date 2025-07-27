@@ -1,4 +1,5 @@
 use cktap_direct::commands::{CkTransport, Read};
+#[cfg(not(feature = "emulator"))]
 use cktap_direct::discovery;
 #[cfg(feature = "emulator")]
 use cktap_direct::emulator;
