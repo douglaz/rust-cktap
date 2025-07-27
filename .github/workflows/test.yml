@@ -42,10 +42,10 @@ jobs:
       - name: Use MSRV Cargo.toml # Don't include "cli" in workspace if using MSRV
         if: ${{ matrix.rust.msrv }}
         run: cp Cargo.toml.MSRV Cargo.toml
-      - name: Build
-        run: cargo build ${{ matrix.features }}
-      - name: Test
-        run: cargo test ${{ matrix.features }}
+      - name: Build (GNU target)
+        run: cargo build --target x86_64-unknown-linux-gnu ${{ matrix.features }}
+      - name: Test (GNU target)
+        run: cargo test --target x86_64-unknown-linux-gnu ${{ matrix.features }}
 
   build_static_musl:
     name: Build static musl binary
@@ -59,8 +59,8 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build static binary
         run: |
-          nix develop -c cargo build --release --target x86_64-unknown-linux-musl
-          # Verify it's actually static
+          nix develop -c cargo build --release
+          # Verify it's actually static (defaults to musl now)
           ldd target/x86_64-unknown-linux-musl/release/cktap-direct 2>&1 | grep -q "statically linked"
 
   rust_fmt:
@@ -96,5 +96,5 @@ jobs:
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features --all-targets -- -D warnings
+          args: --target x86_64-unknown-linux-gnu --all-features --all-targets -- -D warnings
 

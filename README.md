@@ -101,6 +101,27 @@ cargo run --bin cktap-direct -- --format plain auto status  # Note: plain format
 
 **Note**: The CLI now outputs JSON by default for easy scripting and integration. Use `--format plain` for human-readable output (currently shows "not implemented" for most commands).
 
+## Building
+
+This project defaults to building static musl binaries for maximum portability:
+
+```bash
+# Build debug binary (static musl)
+cargo build
+
+# Build release binary (static musl)
+cargo build --release
+
+# The binary will be at: target/x86_64-unknown-linux-musl/release/cktap-direct
+```
+
+If you need a dynamically linked binary:
+
+```bash
+# Build for your host platform
+cargo build --target x86_64-unknown-linux-gnu
+```
+
 ## Minimum Supported Rust Version (MSRV)
 
 This library should always compile with any valid combination of features on Rust **1.88.0**.
