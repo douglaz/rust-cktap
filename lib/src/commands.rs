@@ -61,7 +61,10 @@ pub trait CkTransport: Sized {
             log::debug!("Transmitting APDU: {command_apdu:02x?}");
 
             let rapdu = self.transmit_apdu(command_apdu).await?;
-            log::debug!("Received R-APDU ({} bytes): {:02x?}", rapdu.len(), rapdu);
+            log::debug!(
+                "Received R-APDU ({len} bytes): {rapdu:02x?}",
+                len = rapdu.len()
+            );
 
             let response = R::from_cbor(rapdu.to_vec())?;
             Ok(response)
@@ -208,7 +211,12 @@ where
                     31..=34 => 31, // P2PKH compressed
                     35..=38 => 35, // Segwit P2SH
                     39..=42 => 39, // Segwit Bech32
-                    _ => panic!("Unrecognized BIP-137 address"),
+                    _ => {
+                        return Err(Error::IncorrectSignature(format!(
+                            "Unrecognized BIP-137 address type: {sig_type}",
+                            sig_type = sig[0]
+                        )))
+                    }
                 };
 
                 let rec_id = RecoveryId::from_i32((sig[0] as i32) - subtract_by)?;

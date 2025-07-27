@@ -5,7 +5,11 @@ use cktap_direct::discovery;
 use cktap_direct::emulator;
 use cktap_direct::secp256k1::hashes::{hex::DisplayHex, Hash as _};
 use cktap_direct::secp256k1::rand;
-use cktap_direct::{apdu::Error, commands::Certificate, rand_chaincode, CkTapCard};
+use cktap_direct::{
+    apdu::{CkTapError, Error},
+    commands::Certificate,
+    rand_chaincode, CkTapCard,
+};
 /// CLI for cktap-direct
 use clap::{Parser, Subcommand};
 use rpassword::read_password;
@@ -111,21 +115,31 @@ async fn main() -> Result<(), Error> {
                 SatsCardCommand::Debug => {
                     dbg!(&sc);
                 }
-                SatsCardCommand::Address => println!("Address: {}", sc.address().await.unwrap()),
+                SatsCardCommand::Address => {
+                    let address = sc.address().await?;
+                    println!("Address: {address}");
+                }
                 SatsCardCommand::Certs => check_cert(sc).await,
                 SatsCardCommand::Read => read(sc, None).await,
                 SatsCardCommand::New => {
-                    let slot = sc.slot().expect("current slot number");
+                    let slot = sc
+                        .slot()
+                        .ok_or_else(|| Error::UnknownCardType("No available slot".to_string()))?;
                     let chain_code = Some(rand_chaincode(rng));
-                    let response = &sc
-                        .new_slot(slot, chain_code, cvc_value.as_ref().unwrap())
-                        .await
-                        .unwrap();
+                    let cvc = cvc_value
+                        .as_ref()
+                        .ok_or(Error::CkTap(CkTapError::NeedsAuth))?;
+                    let response = sc.new_slot(slot, chain_code, cvc).await?;
                     println!("{response}")
                 }
                 SatsCardCommand::Unseal => {
-                    let slot = sc.slot().expect("current slot number");
-                    let response = &sc.unseal(slot, cvc_value.as_ref().unwrap()).await.unwrap();
+                    let slot = sc
+                        .slot()
+                        .ok_or_else(|| Error::UnknownCardType("No available slot".to_string()))?;
+                    let cvc = cvc_value
+                        .as_ref()
+                        .ok_or(Error::CkTap(CkTapError::NeedsAuth))?;
+                    let response = sc.unseal(slot, cvc).await?;
                     println!("{response}")
                 }
                 SatsCardCommand::Derive => {
@@ -140,20 +154,20 @@ async fn main() -> Result<(), Error> {
                     dbg!(&ts);
                 }
                 TapSignerCommand::Certs => check_cert(ts).await,
-                TapSignerCommand::Read => {
-                    read(
-                        ts,
-                        Some(cvc_value.as_ref().unwrap_or(&"".to_string()).clone()),
-                    )
-                    .await
-                }
+                TapSignerCommand::Read => read(ts, cvc_value.clone()).await,
                 TapSignerCommand::Init => {
                     let chain_code = rand_chaincode(rng);
-                    let response = &ts.init(chain_code, cvc_value.as_ref().unwrap()).await;
-                    dbg!(response);
+                    let cvc = cvc_value
+                        .as_ref()
+                        .ok_or(Error::CkTap(CkTapError::NeedsAuth))?;
+                    let response = ts.init(chain_code, cvc).await;
+                    dbg!(&response);
                 }
                 TapSignerCommand::Derive { path } => {
-                    match &ts.derive(&path, cvc_value.as_ref().unwrap()).await {
+                    let cvc = cvc_value
+                        .as_ref()
+                        .ok_or(Error::CkTap(CkTapError::NeedsAuth))?;
+                    match &ts.derive(&path, cvc).await {
                         Ok(response) => {
                             println!(
                                 "Derived public key at path m/{}:",
@@ -165,7 +179,8 @@ async fn main() -> Result<(), Error> {
 
                             let pubkey_hex =
                                 response.pubkey.as_ref().unwrap_or(&response.master_pubkey);
-                            println!("Public key: {}", pubkey_hex.as_hex());
+                            let pubkey_hex_str = pubkey_hex.as_hex();
+                            println!("Public key: {pubkey_hex_str}");
 
                             // Convert to Bitcoin address (assuming native segwit for BIP84)
                             if !path.is_empty() && path[0] == 84 {
@@ -195,12 +210,18 @@ async fn main() -> Result<(), Error> {
                 }
 
                 TapSignerCommand::Backup => {
-                    let response = &ts.backup(cvc_value.as_ref().unwrap()).await;
+                    let cvc = cvc_value
+                        .as_ref()
+                        .ok_or(Error::CkTap(CkTapError::NeedsAuth))?;
+                    let response = ts.backup(cvc).await;
                     println!("{response:?}");
                 }
 
                 TapSignerCommand::Change { new_cvc } => {
-                    let response = &ts.change(&new_cvc, cvc_value.as_ref().unwrap()).await;
+                    let cvc = cvc_value
+                        .as_ref()
+                        .ok_or(Error::CkTap(CkTapError::NeedsAuth))?;
+                    let response = ts.change(&new_cvc, cvc).await;
                     println!("{response:?}");
                 }
                 TapSignerCommand::Sign { to_sign } => {
@@ -208,7 +229,10 @@ async fn main() -> Result<(), Error> {
                         cktap_direct::secp256k1::hashes::sha256::Hash::hash(to_sign.as_bytes())
                             .to_byte_array();
 
-                    let response = &ts.sign(digest, vec![], cvc_value.as_ref().unwrap()).await;
+                    let cvc = cvc_value
+                        .as_ref()
+                        .ok_or(Error::CkTap(CkTapError::NeedsAuth))?;
+                    let response = ts.sign(digest, vec![], cvc).await;
                     println!("{response:?}");
                 }
             }
@@ -247,16 +271,19 @@ where
     }
 }
 
-fn cvc() -> String {
+fn cvc() -> Result<String, std::io::Error> {
     print!("Enter cvc: ");
-    io::stdout().flush().unwrap();
-    let cvc = read_password().unwrap();
-    cvc.trim().to_string()
+    io::stdout().flush()?;
+    let cvc = read_password()?;
+    Ok(cvc.trim().to_string())
 }
 
 fn get_cvc_from_env_or_prompt() -> String {
     match std::env::var("CKTAP_CVC") {
         Ok(cvc) => cvc,
-        Err(_) => cvc(),
+        Err(_) => cvc().unwrap_or_else(|_| {
+            eprintln!("Failed to read CVC from terminal");
+            std::process::exit(1);
+        }),
     }
 }
