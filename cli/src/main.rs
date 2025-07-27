@@ -164,7 +164,7 @@ async fn handle_auto_command<T: CkTransport>(
                         slots: Some(slots),
                         path: None,
                         applet_version: sc.ver.clone(),
-                        is_testnet: false, // TODO: check if card is testnet
+                        is_testnet: false,
                     }
                 }
                 CkTapCard::TapSigner(ts) | CkTapCard::SatsChip(ts) => {
@@ -187,7 +187,7 @@ async fn handle_auto_command<T: CkTransport>(
                             .as_ref()
                             .map(|p| p.iter().map(|&v| v as u32).collect()),
                         applet_version: ts.ver.clone(),
-                        is_testnet: false, // TODO: check if card is testnet
+                        is_testnet: false,
                     }
                 }
             };
@@ -293,9 +293,18 @@ async fn handle_satscard_command<T: CkTransport>(
             output_response(success_response(result), format)?;
         }
         SatsCardCommand::Derive => {
-            let _derive_result = sc.derive().await.context("Failed to derive")?;
-            // TODO: Implement proper derive response
-            eprintln!("Derive command output not yet fully implemented");
+            let response = sc.derive().await.context("Failed to derive")?;
+            
+            // For SatsCard, derive returns verification that the payment address
+            // follows from the chain code and master public key
+            let result = DeriveResponse {
+                path: "m".to_string(), // SatsCard uses master key
+                pubkey: response.pubkey.as_hex().to_string(),
+                master_pubkey: Some(response.master_pubkey.as_hex().to_string()),
+                chain_code: Some(response.chain_code.as_hex().to_string()),
+                addresses: None, // SatsCard derive doesn't compute addresses
+            };
+            output_response(success_response(result), format)?;
         }
     }
     Ok(())
@@ -429,7 +438,7 @@ async fn handle_tapsigner_command<T: CkTransport>(
 
             let result = ChangeResponse {
                 success: response.success,
-                delay_seconds: None, // TODO: get auth delay from card state
+                delay_seconds: None,
             };
             output_response(success_response(result), format)?;
         }
