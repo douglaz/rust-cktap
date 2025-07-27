@@ -1,4 +1,4 @@
-# rust-cktap
+# rust-cktap (Pure Rust Fork)
 
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/notmandatory/rust-cktap/blob/master/LICENSE)
 [![CI](https://github.com/notmandatory/rust-cktap/actions/workflows/test.yml/badge.svg)](https://github.com/notmandatory/rust-cktap/actions/workflows/test.yml)
@@ -7,9 +7,21 @@
 A Rust implementation of the [Coinkite Tap Protocol](https://github.com/coinkite/coinkite-tap-proto) (cktap)
 for use with [SATSCARD], [TAPSIGNER], and [SATSCHIP] products.
 
-This project provides PC/SC APDU message encoding and decoding, cvc authentication, certificate chain verification, and card response verification.
+## Fork Differences
 
-It is up to the crate user to send and receive the raw cktap APDU messages via NFC to the card by implementing the `CkTransport` trait. An example implementation is provided using the optional rust `pcsc` crate. Mobile users are expected to implement `CkTransport` using the iOS or Android provided libraries.
+This fork replaces the PC/SC dependency with a pure Rust USB CCID implementation. The main differences from upstream are:
+
+- **Pure Rust Implementation**: No external PC/SC library dependencies
+- **Static Binary Support**: Can compile to fully static musl binaries
+- **Direct USB Communication**: Uses `rusb` crate for USB access
+- **Native CCID Protocol**: Implements the USB CCID protocol directly
+- **Enhanced CLI**: Improved address derivation and display functionality
+
+### Original Project
+
+This project provides APDU message encoding and decoding, cvc authentication, certificate chain verification, and card response verification.
+
+It is up to the crate user to send and receive the raw cktap APDU messages via NFC to the card by implementing the `CkTransport` trait. This fork provides a USB CCID transport implementation that works with USB smart card readers. Mobile users are expected to implement `CkTransport` using the iOS or Android provided libraries.
 
 ### Supported Features
 

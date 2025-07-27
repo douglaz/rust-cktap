@@ -26,13 +26,15 @@ bitcoin = { version = "0.32", features = ["rand-std"] }
 # logging
 log = "0.4"
 
-# pcsc as optional
-pcsc = { version = "2", optional = true }
+# USB communication
+rusb = "0.9"
 
 [features]
 default = []
 emulator = []
 
+[dev-dependencies]
+env_logger = "0.10"
+
 [[example]]
-name = "pcsc"
-required-features = ["pcsc"]
+name = "usb_test"

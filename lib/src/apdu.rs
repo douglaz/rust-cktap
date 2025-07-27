@@ -30,10 +30,15 @@ pub enum Error {
     IncorrectSignature(String),
     #[error("UnknownCardType: {0}")]
     UnknownCardType(String),
-
-    #[cfg(feature = "pcsc")]
-    #[error("PcSc: {0}")]
-    PcSc(String),
+    
+    #[error("USB: {0}")]
+    Usb(#[from] rusb::Error),
+    #[error("CCID: {0}")]
+    Ccid(String),
+    #[error("Device not found")]
+    DeviceNotFound,
+    #[error("Not a CCID device")]
+    NotCcidDevice,
 
     #[cfg(feature = "emulator")]
     #[error("Emulator: {0}")]
@@ -122,12 +127,6 @@ impl From<secp256k1::Error> for Error {
     }
 }
 
-#[cfg(feature = "pcsc")]
-impl From<pcsc::Error> for Error {
-    fn from(e: pcsc::Error) -> Self {
-        Error::PcSc(e.to_string())
-    }
-}
 
 #[derive(Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ErrorResponse {
