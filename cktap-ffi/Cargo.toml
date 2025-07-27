@@ -1,15 +1,15 @@
 [package]
-name = "cktap-ffi"
+name = "cktap-direct-ffi"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
 
 [lib]
-name = "cktap_ffi"
+name = "cktap_direct_ffi"
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
-rust-cktap = { path = "../lib" }
+cktap-direct = { path = "../lib" }
 uniffi = { version = "0.29", features = ["cli"] }
 thiserror = "1.0"
 
