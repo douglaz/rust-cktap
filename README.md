@@ -16,6 +16,13 @@ for use with [SATSCARD], [TAPSIGNER], and [SATSCHIP] products.
 - **Direct USB Communication**: Uses `rusb` crate for USB access
 - **Native CCID Protocol**: Implements the USB CCID protocol directly
 - **Enhanced CLI**: Improved address derivation and display functionality
+- **JSON Output**: All CLI commands now output JSON by default for better scripting
+
+### Breaking Changes from v0.1.0
+
+- **CLI Structure**: Commands are now organized under subcommands (`auto`, `satscard`, `tapsigner`)
+- **JSON Output**: All commands output JSON by default (use `--format plain` for text output)
+- **Binary Name**: Use `--bin cktap-direct` instead of `-p cktap-direct-cli`
 
 ### Original Project
 
@@ -73,11 +80,34 @@ It is up to the crate user to send and receive the raw cktap APDU messages via N
 
 #### Run CLI
 
+The CLI has been restructured with subcommands for different card types:
+
+```bash
+# Show help
+cargo run --bin cktap-direct -- --help
+
+# Auto-detect card type commands
+cargo run --bin cktap-direct -- auto status
+cargo run --bin cktap-direct -- auto certs
+
+# SatsCard-specific commands
+cargo run --bin cktap-direct -- satscard status
+cargo run --bin cktap-direct -- satscard address
+cargo run --bin cktap-direct -- satscard read
+cargo run --bin cktap-direct -- satscard derive
+
+# TapSigner-specific commands (requires CVC/PIN)
+CKTAP_CVC=123456 cargo run --bin cktap-direct -- tapsigner status
+CKTAP_CVC=123456 cargo run --bin cktap-direct -- tapsigner read
+CKTAP_CVC=123456 cargo run --bin cktap-direct -- tapsigner derive --path 84,0,0
+CKTAP_CVC=123456 cargo run --bin cktap-direct -- tapsigner sign "message to sign"
+
+# Output format (JSON by default)
+cargo run --bin cktap-direct -- --format json auto status
+cargo run --bin cktap-direct -- --format plain auto status  # Note: plain format not fully implemented
 ```
-cargo run -p cktap-direct-cli -- --help
-cargo run -p cktap-direct-cli -- certs
-cargo run -p cktap-direct-cli -- read
-```
+
+**Note**: The CLI now outputs JSON by default for easy scripting and integration. Use `--format plain` for human-readable output (currently shows "not implemented" for most commands).
 
 ## Minimum Supported Rust Version (MSRV)
 
