@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/notmandatory/rust-cktap/blob/master/LICENSE)
 [![CI](https://github.com/notmandatory/rust-cktap/actions/workflows/test.yml/badge.svg)](https://github.com/notmandatory/rust-cktap/actions/workflows/test.yml)
-[![rustc](https://img.shields.io/badge/rustc-1.81.0%2B-lightgrey.svg)](https://blog.rust-lang.org/2024/09/05/Rust-1.81.0/)
+[![rustc](https://img.shields.io/badge/rustc-1.88.0%2B-lightgrey.svg)](https://blog.rust-lang.org/2025/06/26/Rust-1.88.0/)
 
 A Rust implementation of the [Coinkite Tap Protocol](https://github.com/coinkite/coinkite-tap-proto) (cktap)
 for use with [SATSCARD], [TAPSIGNER], and [SATSCHIP] products.
@@ -103,7 +103,7 @@ cargo run --bin cktap-direct -- --format plain auto status  # Note: plain format
 
 ## Minimum Supported Rust Version (MSRV)
 
-This library should always compile with any valid combination of features on Rust **1.81.0**.
+This library should always compile with any valid combination of features on Rust **1.88.0**.
 
 
 

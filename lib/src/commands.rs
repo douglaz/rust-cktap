@@ -1,11 +1,11 @@
 use crate::factory_root_key::FactoryRootKey;
-use crate::{apdu::*, rand_nonce};
 use crate::{CkTapCard, SatsCard, TapSigner};
+use crate::{apdu::*, rand_nonce};
 
 use bitcoin::key::rand;
 use bitcoin::secp256k1::ecdh::SharedSecret;
 use bitcoin::secp256k1::ecdsa::{RecoverableSignature, RecoveryId, Signature};
-use bitcoin::secp256k1::hashes::{sha256, Hash};
+use bitcoin::secp256k1::hashes::{Hash, sha256};
 use bitcoin::secp256k1::{self, All, Message, PublicKey, Secp256k1, SecretKey};
 
 use std::convert::TryFrom;
@@ -217,7 +217,7 @@ where
                         return Err(Error::IncorrectSignature(format!(
                             "Unrecognized BIP-137 address type: {sig_type}",
                             sig_type = sig[0]
-                        )))
+                        )));
                     }
                 };
 
@@ -252,8 +252,8 @@ where
 mod tests {
     use super::*;
 
-    use crate::emulator::find_emulator;
     use crate::emulator::CVC;
+    use crate::emulator::find_emulator;
     use crate::rand_chaincode;
 
     #[tokio::test]

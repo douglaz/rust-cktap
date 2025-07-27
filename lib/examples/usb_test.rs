@@ -1,5 +1,5 @@
-use cktap_direct::discovery;
 use cktap_direct::CkTapCard;
+use cktap_direct::discovery;
 
 #[tokio::main]
 async fn main() -> Result<(), cktap_direct::Error> {

@@ -6,9 +6,9 @@ use cktap_direct::commands::{CkTransport, Read};
 use cktap_direct::discovery;
 #[cfg(feature = "emulator")]
 use cktap_direct::emulator;
-use cktap_direct::secp256k1::hashes::{hex::DisplayHex, Hash as _};
+use cktap_direct::secp256k1::hashes::{Hash as _, hex::DisplayHex};
 use cktap_direct::secp256k1::rand;
-use cktap_direct::{commands::Certificate, rand_chaincode, CkTapCard};
+use cktap_direct::{CkTapCard, commands::Certificate, rand_chaincode};
 use clap::{Parser, Subcommand};
 use output::*;
 use rpassword::read_password;
