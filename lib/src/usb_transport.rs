@@ -1,6 +1,6 @@
+use crate::Error;
 use crate::ccid::{CcidCommand, CcidResponse, SlotError, SlotStatus, VoltageSelection};
 use crate::commands::CkTransport;
-use crate::Error;
 use rusb::{Context, DeviceHandle};
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::time::Duration;
