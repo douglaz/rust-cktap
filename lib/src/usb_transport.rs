@@ -215,8 +215,8 @@ mod tests {
 
     #[test]
     fn test_sequence_counter() {
-        let ctx = Context::new().unwrap();
-        let _devices = ctx.devices().unwrap();
+        let ctx = Context::new().expect("Failed to create USB context");
+        let _devices = ctx.devices().expect("Failed to enumerate USB devices");
 
         // This test would need a mock device handle
         // For now, just test the sequence counter logic

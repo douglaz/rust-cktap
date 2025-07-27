@@ -11,11 +11,10 @@ for use with [SATSCARD], [TAPSIGNER], and [SATSCHIP] products.
 
 `cktap-direct` is a fork of [rust-cktap](https://github.com/notmandatory/rust-cktap) that replaces the PC/SC dependency with a direct USB CCID implementation. The main differences from upstream are:
 
-- **Direct USB Access**: Uses `rusb` (libusb wrapper) instead of PC/SC
+- **Direct USB Access**: Uses `rusb` (libusb wrapper) instead of PC/SC middleware
 - **Static Binary Support**: Can compile to fully static musl binaries
-- **Direct USB Communication**: Uses `rusb` crate for USB access
 - **Native CCID Protocol**: Implements the USB CCID protocol directly
-- **Enhanced CLI**: Improved address derivation and display functionality
+- **Enhanced CLI**: Structured commands with JSON output by default for better scripting
 
 ### Original Project
 
@@ -73,11 +72,34 @@ It is up to the crate user to send and receive the raw cktap APDU messages via N
 
 #### Run CLI
 
+The CLI has been restructured with subcommands for different card types:
+
+```bash
+# Show help
+cargo run --bin cktap-direct -- --help
+
+# Auto-detect card type commands
+cargo run --bin cktap-direct -- auto status
+cargo run --bin cktap-direct -- auto certs
+
+# SatsCard-specific commands
+cargo run --bin cktap-direct -- satscard status
+cargo run --bin cktap-direct -- satscard address
+cargo run --bin cktap-direct -- satscard read
+cargo run --bin cktap-direct -- satscard derive
+
+# TapSigner-specific commands (requires CVC/PIN)
+CKTAP_CVC=123456 cargo run --bin cktap-direct -- tapsigner status
+CKTAP_CVC=123456 cargo run --bin cktap-direct -- tapsigner read
+CKTAP_CVC=123456 cargo run --bin cktap-direct -- tapsigner derive --path 84,0,0
+CKTAP_CVC=123456 cargo run --bin cktap-direct -- tapsigner sign "message to sign"
+
+# Output format (JSON by default)
+cargo run --bin cktap-direct -- --format json auto status
+cargo run --bin cktap-direct -- --format plain auto status  # Note: plain format not fully implemented
 ```
-cargo run -p cktap-direct-cli -- --help
-cargo run -p cktap-direct-cli -- certs
-cargo run -p cktap-direct-cli -- read
-```
+
+**Note**: The CLI now outputs JSON by default for easy scripting and integration. Use `--format plain` for human-readable output (currently shows "not implemented" for most commands).
 
 ## Minimum Supported Rust Version (MSRV)
 
