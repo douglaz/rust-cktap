@@ -13,7 +13,8 @@ pub async fn find_emulator() -> Result<CkTapCard<CardEmulator>, Error> {
     if !pipe_path.exists() {
         return Err(Error::Emulator("Emulator pipe doesn't exist.".to_string()));
     }
-    let stream = UnixStream::connect("/tmp/ecard-pipe").expect("unix stream");
+    let stream = UnixStream::connect("/tmp/ecard-pipe")
+        .map_err(|e| Error::Emulator(format!("Failed to connect to emulator pipe: {e}")))?;
     let card_emulator = CardEmulator { stream };
     card_emulator.to_cktap().await
 }
@@ -33,7 +34,10 @@ impl CkTransport for CardEmulator {
             command_apdu
         };
 
-        let mut stream = self.stream.try_clone().expect("clone unix stream");
+        let mut stream = self
+            .stream
+            .try_clone()
+            .map_err(|e| Error::Emulator(format!("Failed to clone unix stream: {e}")))?;
 
         // trim first 5 bytes from command apdu bytes to get the cbor data
         stream

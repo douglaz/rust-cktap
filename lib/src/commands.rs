@@ -112,8 +112,10 @@ where
             let app_nonce = rand_nonce();
 
             let (cmd, session_key) = if self.requires_auth() {
-                let (eprivkey, epubkey, xcvc) = self
-                    .calc_ekeys_xcvc(cvc.as_ref().expect("cvc is required"), ReadCommand::name());
+                let cvc_str = cvc
+                    .as_ref()
+                    .ok_or(Error::CkTap(crate::apdu::CkTapError::NeedsAuth))?;
+                let (eprivkey, epubkey, xcvc) = self.calc_ekeys_xcvc(cvc_str, ReadCommand::name());
                 (
                     ReadCommand::authenticated(app_nonce, epubkey, xcvc),
                     Some(SharedSecret::new(self.pubkey(), &eprivkey)),
@@ -239,8 +241,7 @@ where
         app_nonce: [u8; 16],
     ) -> Result<(), secp256k1::Error> {
         let message = self.message_digest(card_nonce, app_nonce);
-        let signature = Signature::from_compact(signature.as_slice())
-            .expect("Failed to construct ECDSA signature from check response");
+        let signature = Signature::from_compact(signature.as_slice())?;
         self.secp()
             .verify_ecdsa(&message, &signature, self.pubkey())
     }

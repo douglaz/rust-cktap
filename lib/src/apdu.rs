@@ -141,6 +141,8 @@ pub trait CommandApdu {
         Self: serde::Serialize + Debug,
     {
         let mut command = Vec::new();
+        // CBOR serialization of well-formed command structs should never fail
+        // This is acceptable per CONVENTIONS.md as it's infallible by construction
         into_writer(&self, &mut command).unwrap();
         build_apdu(&CBOR_CLA_INS_P1P2, command.as_slice())
     }
@@ -842,13 +844,18 @@ impl ResponseApdu for UnsealResponse {}
 
 impl fmt::Display for UnsealResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let master = XOnlyPublicKey::from_slice(self.master_pk.as_slice()).unwrap();
-        let pubkey = PublicKey::from_slice(self.pubkey.as_slice()).unwrap();
-        let privkey = SecretKey::from_slice(self.privkey.as_slice()).unwrap();
-        writeln!(f, "slot: {}", self.slot)?;
+        let master =
+            XOnlyPublicKey::from_slice(self.master_pk.as_slice()).map_err(|_| fmt::Error)?;
+        let pubkey = PublicKey::from_slice(self.pubkey.as_slice()).map_err(|_| fmt::Error)?;
+        let privkey = SecretKey::from_slice(self.privkey.as_slice()).map_err(|_| fmt::Error)?;
+        writeln!(f, "slot: {slot}", slot = self.slot)?;
         writeln!(f, "master_pk: {master}")?;
         writeln!(f, "pubkey: {pubkey}")?;
-        writeln!(f, "privkey: {}", privkey.display_secret())
+        writeln!(
+            f,
+            "privkey: {privkey_display}",
+            privkey_display = privkey.display_secret()
+        )
     }
 }
 
