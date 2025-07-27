@@ -30,7 +30,7 @@ pub enum Error {
     IncorrectSignature(String),
     #[error("UnknownCardType: {0}")]
     UnknownCardType(String),
-    
+
     #[error("USB: {0}")]
     Usb(#[from] rusb::Error),
     #[error("CCID: {0}")]
@@ -126,7 +126,6 @@ impl From<secp256k1::Error> for Error {
         Error::IncorrectSignature(e.to_string())
     }
 }
-
 
 #[derive(Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ErrorResponse {
@@ -847,8 +846,8 @@ impl fmt::Display for UnsealResponse {
         let pubkey = PublicKey::from_slice(self.pubkey.as_slice()).unwrap();
         let privkey = SecretKey::from_slice(self.privkey.as_slice()).unwrap();
         writeln!(f, "slot: {}", self.slot)?;
-        writeln!(f, "master_pk: {}", master)?;
-        writeln!(f, "pubkey: {}", pubkey)?;
+        writeln!(f, "master_pk: {master}")?;
+        writeln!(f, "pubkey: {pubkey}")?;
         writeln!(f, "privkey: {}", privkey.display_secret())
     }
 }

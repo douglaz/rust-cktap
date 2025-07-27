@@ -15,7 +15,7 @@ serde = "1"
 serde_bytes = "0.11"
 
 # async
-tokio = { version = "1.44", features = ["macros"] }
+tokio = { version = "1.44", features = ["macros", "rt-multi-thread"] }
 
 # error handling
 thiserror = "2.0"

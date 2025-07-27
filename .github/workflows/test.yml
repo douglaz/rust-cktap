@@ -2,10 +2,12 @@ on:
   push:
     branches:
       - 'master'
+      - 'main'
       - 'release/*'
   pull_request:
     branches:
       - 'master'
+      - 'main'
       - 'release/*'
 
 name: CI
@@ -35,8 +37,8 @@ jobs:
           profile: minimal
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2.2.1
-      - name: Install libpcsclite-dev
-        run: sudo apt install libpcsclite-dev
+      - name: Install libusb
+        run: sudo apt install libusb-1.0-0-dev
       - name: Use MSRV Cargo.toml # Don't include "cli" in workspace if using MSRV
         if: ${{ matrix.rust.msrv }}
         run: cp Cargo.toml.MSRV Cargo.toml
@@ -44,6 +46,22 @@ jobs:
         run: cargo build ${{ matrix.features }}
       - name: Test
         run: cargo test ${{ matrix.features }}
+
+  build_static_musl:
+    name: Build static musl binary
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Install Nix
+        uses: cachix/install-nix-action@v22
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build static binary
+        run: |
+          nix develop -c cargo build --release --target x86_64-unknown-linux-musl
+          # Verify it's actually static
+          ldd target/x86_64-unknown-linux-musl/release/cktap-direct 2>&1 | grep -q "statically linked"
 
   rust_fmt:
     name: Rust fmt
@@ -73,8 +91,8 @@ jobs:
           override: true
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2.2.1
-      - name: Install libpcsclite-dev
-        run: sudo apt install libpcsclite-dev
+      - name: Install libusb
+        run: sudo apt install libusb-1.0-0-dev
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

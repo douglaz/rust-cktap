@@ -2,13 +2,12 @@ use thiserror::Error;
 
 /// CCID (Chip Card Interface Device) protocol implementation
 /// Based on USB-IF CCID specification v1.1
-
 /// CCID message header (10 bytes)
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct CcidHeader {
     pub message_type: u8,
-    pub length: u32,      // Little-endian
+    pub length: u32, // Little-endian
     pub slot: u8,
     pub sequence: u8,
     pub reserved: [u8; 3],
@@ -33,7 +32,7 @@ impl CcidHeader {
         if bytes.len() < 10 {
             return Err(CcidError::InvalidHeader);
         }
-        
+
         Ok(Self {
             message_type: bytes[0],
             length: u32::from_le_bytes([bytes[1], bytes[2], bytes[3], bytes[4]]),
@@ -113,7 +112,7 @@ impl CcidCommand {
     pub fn icc_power_on(slot: u8, sequence: u8, voltage: VoltageSelection) -> Self {
         let mut header = CcidHeader::new(MessageType::PcToRdrIccPowerOn, 0, slot, sequence);
         header.reserved[0] = voltage as u8; // bPowerSelect
-        
+
         Self {
             header,
             data: Vec::new(),
@@ -128,17 +127,14 @@ impl CcidCommand {
             slot,
             sequence,
         );
-        
-        Self {
-            header,
-            data: apdu,
-        }
+
+        Self { header, data: apdu }
     }
 
     /// Create a PC_to_RDR_GetSlotStatus command
     pub fn get_slot_status(slot: u8, sequence: u8) -> Self {
         let header = CcidHeader::new(MessageType::PcToRdrGetSlotStatus, 0, slot, sequence);
-        
+
         Self {
             header,
             data: Vec::new(),
@@ -172,7 +168,7 @@ impl CcidResponse {
 
         let header = CcidHeader::from_bytes(bytes)?;
         let data_len = header.length as usize;
-        
+
         if bytes.len() < 10 + data_len {
             return Err(CcidError::InvalidResponse);
         }
@@ -248,31 +244,31 @@ impl SlotError {
 pub enum CcidError {
     #[error("Invalid CCID header")]
     InvalidHeader,
-    
+
     #[error("Invalid CCID response")]
     InvalidResponse,
-    
+
     #[error("Unknown message type: {0:#x}")]
     UnknownMessageType(u8),
-    
+
     #[error("Invalid slot status")]
     InvalidSlotStatus,
-    
+
     #[error("Invalid slot error")]
     InvalidSlotError,
-    
+
     #[error("ICC mute (no response)")]
     IccMute,
-    
+
     #[error("ICC error: {0}")]
     IccError(String),
-    
+
     #[error("Command aborted")]
     CommandAborted,
-    
+
     #[error("Time extension requested")]
     TimeExtension,
-    
+
     #[error("Hardware error")]
     HardwareError,
 }
@@ -291,20 +287,31 @@ mod tests {
         let header = CcidHeader::new(MessageType::PcToRdrXfrBlock, 5, 0, 1);
         let bytes = header.to_bytes();
         let parsed = CcidHeader::from_bytes(&bytes).unwrap();
-        
+
         assert_eq!(header.message_type, parsed.message_type);
-        assert_eq!(header.length, parsed.length);
-        assert_eq!(header.slot, parsed.slot);
-        assert_eq!(header.sequence, parsed.sequence);
+        // Copy fields to avoid unaligned reference to packed field
+        let header_length = header.length;
+        let parsed_length = parsed.length;
+        assert_eq!(header_length, parsed_length);
+        let header_slot = header.slot;
+        let parsed_slot = parsed.slot;
+        assert_eq!(header_slot, parsed_slot);
+        let header_sequence = header.sequence;
+        let parsed_sequence = parsed.sequence;
+        assert_eq!(header_sequence, parsed_sequence);
     }
 
     #[test]
     fn test_command_creation() {
         let apdu = vec![0x00, 0xA4, 0x04, 0x00];
         let cmd = CcidCommand::xfr_block(0, 1, apdu.clone());
-        
-        assert_eq!(cmd.header.message_type, MessageType::PcToRdrXfrBlock as u8);
-        assert_eq!(cmd.header.length, 4);
+
+        // Copy packed fields to local variables to avoid unaligned access
+        let message_type = cmd.header.message_type;
+        let length = cmd.header.length;
+
+        assert_eq!(message_type, MessageType::PcToRdrXfrBlock as u8);
+        assert_eq!(length, 4);
         assert_eq!(cmd.data, apdu);
     }
 }

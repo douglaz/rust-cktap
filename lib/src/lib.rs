@@ -4,10 +4,10 @@ use bitcoin::key::rand::Rng as _;
 use commands::CkTransport;
 
 pub mod apdu;
-pub mod commands;
-pub mod factory_root_key;
 pub mod ccid;
+pub mod commands;
 pub mod discovery;
+pub mod factory_root_key;
 pub mod usb_transport;
 
 pub use bitcoin::secp256k1::{self, rand};
@@ -34,13 +34,13 @@ impl<T: CkTransport> core::fmt::Debug for CkTapCard<T> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match &self {
             CkTapCard::TapSigner(t) => {
-                write!(f, "CkTap::TapSigner({:?})", t)
+                write!(f, "CkTap::TapSigner({t:?})")
             }
             CkTapCard::SatsChip(t) => {
-                write!(f, "CkTap::SatsChip({:?})", t)
+                write!(f, "CkTap::SatsChip({t:?})")
             }
             CkTapCard::SatsCard(s) => {
-                write!(f, "CkTap::SatsCard({:?})", s)
+                write!(f, "CkTap::SatsCard({s:?})")
             }
         }
     }
