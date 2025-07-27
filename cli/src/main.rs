@@ -101,7 +101,6 @@ enum TapSignerCommand {
     },
 }
 
-
 impl clap::ValueEnum for OutputFormat {
     fn value_variants<'a>() -> &'a [Self] {
         &[OutputFormat::Json, OutputFormat::Plain]
@@ -167,29 +166,27 @@ async fn handle_auto_command<T: CkTransport>(
                         is_testnet: false,
                     }
                 }
-                CkTapCard::TapSigner(ts) | CkTapCard::SatsChip(ts) => {
-                    DebugResponse {
-                        card_type: if matches!(card, CkTapCard::SatsChip(_)) {
-                            "satschip".to_string()
-                        } else {
-                            "tapsigner".to_string()
-                        },
-                        card_ident: format!(
-                            "CARD-{:X}",
-                            ts.pubkey.serialize()[0..4]
-                                .iter()
-                                .fold(0u32, |acc, &b| (acc << 8) | b as u32)
-                        ),
-                        birth_height: Some(ts.birth as u32),
-                        slots: None,
-                        path: ts
-                            .path
-                            .as_ref()
-                            .map(|p| p.iter().map(|&v| v as u32).collect()),
-                        applet_version: ts.ver.clone(),
-                        is_testnet: false,
-                    }
-                }
+                CkTapCard::TapSigner(ts) | CkTapCard::SatsChip(ts) => DebugResponse {
+                    card_type: if matches!(card, CkTapCard::SatsChip(_)) {
+                        "satschip".to_string()
+                    } else {
+                        "tapsigner".to_string()
+                    },
+                    card_ident: format!(
+                        "CARD-{:X}",
+                        ts.pubkey.serialize()[0..4]
+                            .iter()
+                            .fold(0u32, |acc, &b| (acc << 8) | b as u32)
+                    ),
+                    birth_height: Some(ts.birth as u32),
+                    slots: None,
+                    path: ts
+                        .path
+                        .as_ref()
+                        .map(|p| p.iter().map(|&v| v as u32).collect()),
+                    applet_version: ts.ver.clone(),
+                    is_testnet: false,
+                },
             };
             output_response(success_response(response), format)?;
         }
@@ -294,12 +291,15 @@ async fn handle_satscard_command<T: CkTransport>(
         }
         SatsCardCommand::Derive => {
             let response = sc.derive().await.context("Failed to derive")?;
-            
+
             // For SatsCard, derive returns verification that the payment address
             // follows from the chain code and master public key
             let result = DeriveResponse {
                 path: "m".to_string(), // SatsCard uses master key
-                pubkey: response.pubkey.as_hex().to_string(),
+                pubkey: response
+                    .pubkey
+                    .map(|pk| pk.as_hex().to_string())
+                    .unwrap_or_else(|| response.master_pubkey.as_hex().to_string()),
                 master_pubkey: Some(response.master_pubkey.as_hex().to_string()),
                 chain_code: Some(response.chain_code.as_hex().to_string()),
                 addresses: None, // SatsCard derive doesn't compute addresses
@@ -524,4 +524,3 @@ fn get_cvc_from_env_or_prompt() -> Result<String> {
         Err(_) => cvc(),
     }
 }
-
