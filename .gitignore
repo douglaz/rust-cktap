@@ -2,6 +2,9 @@
 /target
 /Cargo.lock
 
+# Local development files
+CLAUDE.md
+
 # IDE
 /.vscode
 /.idea
