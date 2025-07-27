@@ -58,7 +58,7 @@ pub trait CkTransport: Sized {
     {
         async move {
             let command_apdu = command.apdu_bytes();
-            log::debug!("Transmitting APDU: {:02x?}", command_apdu);
+            log::debug!("Transmitting APDU: {command_apdu:02x?}");
 
             let rapdu = self.transmit_apdu(command_apdu).await?;
             log::debug!("Received R-APDU ({} bytes): {:02x?}", rapdu.len(), rapdu);

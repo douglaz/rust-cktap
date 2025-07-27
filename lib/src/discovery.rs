@@ -27,14 +27,14 @@ pub struct CcidDeviceInfo {
 
 /// Find the first available CCID card reader and connect to it
 pub async fn find_first() -> Result<CkTapCard<UsbTransport>, Error> {
-    let context = Context::new().map_err(|e| Error::Usb(e))?;
+    let context = Context::new().map_err(Error::Usb)?;
 
     info!("Searching for CCID devices...");
 
-    for device in context.devices().map_err(|e| Error::Usb(e))?.iter() {
+    for device in context.devices().map_err(Error::Usb)?.iter() {
         if let Ok(info) = get_device_info(&device) {
             if info.is_coinkite {
-                info!("Found Coinkite device: {:?}", info);
+                info!("Found Coinkite device: {info:?}");
 
                 if let Ok(transport) = open_ccid_device(&device) {
                     return transport.to_cktap().await;
@@ -47,23 +47,23 @@ pub async fn find_first() -> Result<CkTapCard<UsbTransport>, Error> {
     // Prioritize certain readers that are known to work well
     let devices: Vec<_> = context
         .devices()
-        .map_err(|e| Error::Usb(e))?
+        .map_err(Error::Usb)?
         .iter()
         .collect();
 
     // First try OMNIKEY readers (known to work well)
     for device in &devices {
-        if let Ok(info) = get_device_info(&device) {
+        if let Ok(info) = get_device_info(device) {
             if info.vendor_id == 0x076B {
                 // OMNIKEY vendor ID
-                info!("Trying OMNIKEY reader: {:?}", info);
+                info!("Trying OMNIKEY reader: {info:?}");
 
-                match open_ccid_device(&device) {
+                match open_ccid_device(device) {
                     Ok(transport) => match transport.to_cktap().await {
                         Ok(card) => return Ok(card),
-                        Err(e) => debug!("Failed to initialize card: {}", e),
+                        Err(e) => debug!("Failed to initialize card: {e}"),
                     },
-                    Err(e) => debug!("Failed to open device: {}", e),
+                    Err(e) => debug!("Failed to open device: {e}"),
                 }
             }
         }
@@ -71,22 +71,22 @@ pub async fn find_first() -> Result<CkTapCard<UsbTransport>, Error> {
 
     // Then try other CCID devices
     for device in &devices {
-        if is_ccid_device(&device).unwrap_or(false) {
-            if let Ok(info) = get_device_info(&device) {
+        if is_ccid_device(device).unwrap_or(false) {
+            if let Ok(info) = get_device_info(device) {
                 // Skip YubiKey for now - it might not have a card inserted
                 if info.vendor_id == 0x1050 {
                     debug!("Skipping YubiKey");
                     continue;
                 }
 
-                debug!("Trying generic CCID device: {:?}", info);
+                debug!("Trying generic CCID device: {info:?}");
 
-                match open_ccid_device(&device) {
+                match open_ccid_device(device) {
                     Ok(transport) => match transport.to_cktap().await {
                         Ok(card) => return Ok(card),
-                        Err(e) => debug!("Failed to initialize card: {}", e),
+                        Err(e) => debug!("Failed to initialize card: {e}"),
                     },
-                    Err(e) => debug!("Failed to open device: {}", e),
+                    Err(e) => debug!("Failed to open device: {e}"),
                 }
             }
         }
@@ -97,10 +97,10 @@ pub async fn find_first() -> Result<CkTapCard<UsbTransport>, Error> {
 
 /// List all available CCID devices
 pub fn list_devices() -> Result<Vec<CcidDeviceInfo>, Error> {
-    let context = Context::new().map_err(|e| Error::Usb(e))?;
+    let context = Context::new().map_err(Error::Usb)?;
     let mut devices = Vec::new();
 
-    for device in context.devices().map_err(|e| Error::Usb(e))?.iter() {
+    for device in context.devices().map_err(Error::Usb)?.iter() {
         if let Ok(info) = get_device_info(&device) {
             devices.push(info);
         }
@@ -111,13 +111,13 @@ pub fn list_devices() -> Result<Vec<CcidDeviceInfo>, Error> {
 
 /// Get information about a USB device
 fn get_device_info(device: &Device<Context>) -> Result<CcidDeviceInfo, Error> {
-    let desc = device.device_descriptor().map_err(|e| Error::Usb(e))?;
+    let desc = device.device_descriptor().map_err(Error::Usb)?;
 
     if !is_ccid_device_descriptor(&desc, device)? {
         return Err(Error::NotCcidDevice);
     }
 
-    let handle = device.open().map_err(|e| Error::Usb(e))?;
+    let handle = device.open().map_err(Error::Usb)?;
 
     let manufacturer = read_string_descriptor(&handle, &desc, desc.manufacturer_string_index());
     let product = read_string_descriptor(&handle, &desc, desc.product_string_index());
@@ -140,7 +140,7 @@ fn get_device_info(device: &Device<Context>) -> Result<CcidDeviceInfo, Error> {
 
 /// Check if a device is a CCID device
 fn is_ccid_device(device: &Device<Context>) -> Result<bool, Error> {
-    let desc = device.device_descriptor().map_err(|e| Error::Usb(e))?;
+    let desc = device.device_descriptor().map_err(Error::Usb)?;
     is_ccid_device_descriptor(&desc, device)
 }
 
@@ -173,12 +173,12 @@ fn is_ccid_device_descriptor(
 
 /// Open a CCID device and create a transport
 fn open_ccid_device(device: &Device<Context>) -> Result<UsbTransport, Error> {
-    let handle = device.open().map_err(|e| Error::Usb(e))?;
+    let handle = device.open().map_err(Error::Usb)?;
 
     // Find the CCID interface
     let config = device
         .active_config_descriptor()
-        .map_err(|e| Error::Usb(e))?;
+        .map_err(Error::Usb)?;
 
     for interface in config.interfaces() {
         for descriptor in interface.descriptors() {
@@ -196,14 +196,13 @@ fn open_ccid_device(device: &Device<Context>) -> Result<UsbTransport, Error> {
                 // Claim the interface
                 handle
                     .claim_interface(interface_num)
-                    .map_err(|e| Error::Usb(e))?;
+                    .map_err(Error::Usb)?;
 
                 // Find endpoints
                 let (endpoint_out, endpoint_in) = find_ccid_endpoints(&handle, interface_num)?;
 
                 info!(
-                    "Opened CCID device on interface {} (endpoints: out={:#x}, in={:#x})",
-                    interface_num, endpoint_out, endpoint_in
+                    "Opened CCID device on interface {interface_num} (endpoints: out={endpoint_out:#x}, in={endpoint_in:#x})"
                 );
 
                 return Ok(UsbTransport::new(

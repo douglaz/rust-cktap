@@ -57,11 +57,11 @@ impl UsbTransport {
             bytes.len(),
             cmd.header.sequence
         );
-        log::trace!("Command bytes: {:02x?}", bytes);
+        log::trace!("Command bytes: {bytes:02x?}");
 
         self.device
             .write_bulk(self.endpoint_out, &bytes, self.timeout)
-            .map_err(|e| Error::Usb(e))?;
+            .map_err(Error::Usb)?;
 
         Ok(())
     }
@@ -73,9 +73,9 @@ impl UsbTransport {
         let len = self
             .device
             .read_bulk(self.endpoint_in, &mut buffer, self.timeout)
-            .map_err(|e| Error::Usb(e))?;
+            .map_err(Error::Usb)?;
 
-        log::debug!("Received {} bytes", len);
+        log::debug!("Received {len} bytes");
         log::trace!("Response bytes: {:02x?}", &buffer[..len.min(64)]);
 
         if len < 10 {
@@ -119,7 +119,7 @@ impl UsbTransport {
                         0xFE => Err(Error::Ccid("ICC mute (no card?)".to_string())),
                         0xFD => Err(Error::Ccid("XFR parity error".to_string())),
                         0xFC => Err(Error::Ccid("XFR overrun".to_string())),
-                        code => Err(Error::Ccid(format!("Command error: {:#x}", code))),
+                        code => Err(Error::Ccid(format!("Command error: {code:#x}"))),
                     }
                 }
             }
@@ -147,7 +147,7 @@ impl CkTransport for UsbTransport {
             }
             Err(e) => {
                 // Log but don't fail - card might already be powered on
-                log::debug!("Power on returned: {}", e);
+                log::debug!("Power on returned: {e}");
             }
         }
 
@@ -180,7 +180,7 @@ pub fn find_ccid_endpoints(
     let config = device
         .device()
         .active_config_descriptor()
-        .map_err(|e| Error::Usb(e))?;
+        .map_err(Error::Usb)?;
 
     let interface_desc = config
         .interfaces()
@@ -194,12 +194,11 @@ pub fn find_ccid_endpoints(
     let mut endpoint_out = None;
 
     for endpoint in interface_desc.endpoint_descriptors() {
-        match endpoint.transfer_type() {
-            rusb::TransferType::Bulk => match endpoint.direction() {
+        if endpoint.transfer_type() == rusb::TransferType::Bulk {
+            match endpoint.direction() {
                 rusb::Direction::In => endpoint_in = Some(endpoint.address()),
                 rusb::Direction::Out => endpoint_out = Some(endpoint.address()),
-            },
-            _ => {}
+            }
         }
     }
 
@@ -212,11 +211,12 @@ pub fn find_ccid_endpoints(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rusb::UsbContext;
 
     #[test]
     fn test_sequence_counter() {
         let ctx = Context::new().unwrap();
-        let devices = ctx.devices().unwrap();
+        let _devices = ctx.devices().unwrap();
 
         // This test would need a mock device handle
         // For now, just test the sequence counter logic

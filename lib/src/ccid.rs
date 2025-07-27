@@ -2,7 +2,6 @@ use thiserror::Error;
 
 /// CCID (Chip Card Interface Device) protocol implementation
 /// Based on USB-IF CCID specification v1.1
-
 /// CCID message header (10 bytes)
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
@@ -290,9 +289,16 @@ mod tests {
         let parsed = CcidHeader::from_bytes(&bytes).unwrap();
 
         assert_eq!(header.message_type, parsed.message_type);
-        assert_eq!(header.length, parsed.length);
-        assert_eq!(header.slot, parsed.slot);
-        assert_eq!(header.sequence, parsed.sequence);
+        // Copy fields to avoid unaligned reference to packed field
+        let header_length = header.length;
+        let parsed_length = parsed.length;
+        assert_eq!(header_length, parsed_length);
+        let header_slot = header.slot;
+        let parsed_slot = parsed.slot;
+        assert_eq!(header_slot, parsed_slot);
+        let header_sequence = header.sequence;
+        let parsed_sequence = parsed.sequence;
+        assert_eq!(header_sequence, parsed_sequence);
     }
 
     #[test]
@@ -300,8 +306,12 @@ mod tests {
         let apdu = vec![0x00, 0xA4, 0x04, 0x00];
         let cmd = CcidCommand::xfr_block(0, 1, apdu.clone());
 
-        assert_eq!(cmd.header.message_type, MessageType::PcToRdrXfrBlock as u8);
-        assert_eq!(cmd.header.length, 4);
+        // Copy packed fields to local variables to avoid unaligned access
+        let message_type = cmd.header.message_type;
+        let length = cmd.header.length;
+        
+        assert_eq!(message_type, MessageType::PcToRdrXfrBlock as u8);
+        assert_eq!(length, 4);
         assert_eq!(cmd.data, apdu);
     }
 }
