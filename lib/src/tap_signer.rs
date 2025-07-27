@@ -170,7 +170,9 @@ impl<T: CkTransport> TapSigner<T> {
             .map(|(session_key_byte, digest_byte)| session_key_byte ^ digest_byte)
             .collect();
 
-        let xdigest: [u8; 32] = xdigest_vec.try_into().expect("input is also 32 bytes");
+        let xdigest: [u8; 32] = xdigest_vec
+            .try_into()
+            .map_err(|_| Error::CkTap(crate::apdu::CkTapError::BadArguments))?;
 
         let sign_command =
             SignCommand::for_tapsigner(sub_path.clone(), xdigest, epubkey, xcvc.clone());

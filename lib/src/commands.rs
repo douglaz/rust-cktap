@@ -61,7 +61,10 @@ pub trait CkTransport: Sized {
             log::debug!("Transmitting APDU: {command_apdu:02x?}");
 
             let rapdu = self.transmit_apdu(command_apdu).await?;
-            log::debug!("Received R-APDU ({} bytes): {:02x?}", rapdu.len(), rapdu);
+            log::debug!(
+                "Received R-APDU ({len} bytes): {rapdu:02x?}",
+                len = rapdu.len()
+            );
 
             let response = R::from_cbor(rapdu.to_vec())?;
             Ok(response)
@@ -109,8 +112,10 @@ where
             let app_nonce = rand_nonce();
 
             let (cmd, session_key) = if self.requires_auth() {
-                let (eprivkey, epubkey, xcvc) = self
-                    .calc_ekeys_xcvc(cvc.as_ref().expect("cvc is required"), ReadCommand::name());
+                let cvc_str = cvc
+                    .as_ref()
+                    .ok_or(Error::CkTap(crate::apdu::CkTapError::NeedsAuth))?;
+                let (eprivkey, epubkey, xcvc) = self.calc_ekeys_xcvc(cvc_str, ReadCommand::name());
                 (
                     ReadCommand::authenticated(app_nonce, epubkey, xcvc),
                     Some(SharedSecret::new(self.pubkey(), &eprivkey)),
@@ -208,7 +213,12 @@ where
                     31..=34 => 31, // P2PKH compressed
                     35..=38 => 35, // Segwit P2SH
                     39..=42 => 39, // Segwit Bech32
-                    _ => panic!("Unrecognized BIP-137 address"),
+                    _ => {
+                        return Err(Error::IncorrectSignature(format!(
+                            "Unrecognized BIP-137 address type: {sig_type}",
+                            sig_type = sig[0]
+                        )))
+                    }
                 };
 
                 let rec_id = RecoveryId::from_i32((sig[0] as i32) - subtract_by)?;
@@ -231,8 +241,7 @@ where
         app_nonce: [u8; 16],
     ) -> Result<(), secp256k1::Error> {
         let message = self.message_digest(card_nonce, app_nonce);
-        let signature = Signature::from_compact(signature.as_slice())
-            .expect("Failed to construct ECDSA signature from check response");
+        let signature = Signature::from_compact(signature.as_slice())?;
         self.secp()
             .verify_ecdsa(&message, &signature, self.pubkey())
     }

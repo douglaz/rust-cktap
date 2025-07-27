@@ -10,11 +10,12 @@ async fn main() -> Result<(), cktap_direct::Error> {
     // List all devices
     match discovery::list_devices() {
         Ok(devices) => {
-            println!("Found {} CCID device(s):", devices.len());
+            println!("Found {count} CCID device(s):", count = devices.len());
             for device in devices {
                 println!(
-                    "  - Vendor: {:#06x}, Product: {:#06x}",
-                    device.vendor_id, device.product_id
+                    "  - Vendor: {vendor:#06x}, Product: {product:#06x}",
+                    vendor = device.vendor_id,
+                    product = device.product_id
                 );
                 if let Some(manufacturer) = device.manufacturer {
                     println!("    Manufacturer: {manufacturer}");
@@ -25,7 +26,10 @@ async fn main() -> Result<(), cktap_direct::Error> {
                 if let Some(serial) = device.serial {
                     println!("    Serial: {serial}");
                 }
-                println!("    Coinkite device: {}", device.is_coinkite);
+                println!(
+                    "    Coinkite device: {is_coinkite}",
+                    is_coinkite = device.is_coinkite
+                );
             }
         }
         Err(e) => {
@@ -58,13 +62,13 @@ async fn main() -> Result<(), cktap_direct::Error> {
             match ts.status().await {
                 Ok(status) => {
                     println!("Status:");
-                    println!("  Protocol: {}", status.proto);
-                    println!("  Version: {}", status.ver);
-                    println!("  Birth: {}", status.birth);
+                    println!("  Protocol: {proto}", proto = status.proto);
+                    println!("  Version: {ver}", ver = status.ver);
+                    println!("  Birth: {birth}", birth = status.birth);
                     if let Some(path) = status.path {
                         println!("  Path: {path:?}");
                     }
-                    println!("  Card nonce: {:02x?}", status.card_nonce);
+                    println!("  Card nonce: {nonce:02x?}", nonce = status.card_nonce);
                 }
                 Err(e) => {
                     eprintln!("Error getting status: {e}");
@@ -74,10 +78,10 @@ async fn main() -> Result<(), cktap_direct::Error> {
         CkTapCard::SatsCard(sc) => {
             println!("\nSatsCard detected!");
             println!("Card details:");
-            println!("  Protocol: {}", sc.proto);
-            println!("  Version: {}", sc.ver);
-            println!("  Birth: {}", sc.birth);
-            println!("  Slots: {:?}", sc.slots);
+            println!("  Protocol: {proto}", proto = sc.proto);
+            println!("  Version: {ver}", ver = sc.ver);
+            println!("  Birth: {birth}", birth = sc.birth);
+            println!("  Slots: {slots:?}", slots = sc.slots);
             if let Some(addr) = &sc.addr {
                 println!("  Address: {addr}");
             }
@@ -87,9 +91,9 @@ async fn main() -> Result<(), cktap_direct::Error> {
             match ts.status().await {
                 Ok(status) => {
                     println!("Status:");
-                    println!("  Protocol: {}", status.proto);
-                    println!("  Version: {}", status.ver);
-                    println!("  Birth: {}", status.birth);
+                    println!("  Protocol: {proto}", proto = status.proto);
+                    println!("  Version: {ver}", ver = status.ver);
+                    println!("  Birth: {birth}", birth = status.birth);
                 }
                 Err(e) => {
                     eprintln!("Error getting status: {e}");
