@@ -11,18 +11,10 @@ for use with [SATSCARD], [TAPSIGNER], and [SATSCHIP] products.
 
 `cktap-direct` is a fork of [rust-cktap](https://github.com/notmandatory/rust-cktap) that replaces the PC/SC dependency with a direct USB CCID implementation. The main differences from upstream are:
 
-- **Direct USB Access**: Uses `rusb` (libusb wrapper) instead of PC/SC
+- **Direct USB Access**: Uses `rusb` (libusb wrapper) instead of PC/SC middleware
 - **Static Binary Support**: Can compile to fully static musl binaries
-- **Direct USB Communication**: Uses `rusb` crate for USB access
 - **Native CCID Protocol**: Implements the USB CCID protocol directly
-- **Enhanced CLI**: Improved address derivation and display functionality
-- **JSON Output**: All CLI commands now output JSON by default for better scripting
-
-### Breaking Changes from v0.1.0
-
-- **CLI Structure**: Commands are now organized under subcommands (`auto`, `satscard`, `tapsigner`)
-- **JSON Output**: All commands output JSON by default (use `--format plain` for text output)
-- **Binary Name**: Use `--bin cktap-direct` instead of `-p cktap-direct-cli`
+- **Enhanced CLI**: Structured commands with JSON output by default for better scripting
 
 ### Original Project
 
