@@ -30,7 +30,7 @@ pub enum Error {
     IncorrectSignature(String),
     #[error("UnknownCardType: {0}")]
     UnknownCardType(String),
-    
+
     #[error("USB: {0}")]
     Usb(#[from] rusb::Error),
     #[error("CCID: {0}")]
@@ -126,7 +126,6 @@ impl From<secp256k1::Error> for Error {
         Error::IncorrectSignature(e.to_string())
     }
 }
-
 
 #[derive(Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ErrorResponse {

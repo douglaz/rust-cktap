@@ -1,13 +1,13 @@
+use cktap_direct::commands::{CkTransport, Read};
+use cktap_direct::discovery;
+#[cfg(feature = "emulator")]
+use cktap_direct::emulator;
+use cktap_direct::secp256k1::hashes::{hex::DisplayHex, Hash as _};
+use cktap_direct::secp256k1::rand;
+use cktap_direct::{apdu::Error, commands::Certificate, rand_chaincode, CkTapCard};
 /// CLI for cktap-direct
 use clap::{Parser, Subcommand};
 use rpassword::read_password;
-use cktap_direct::commands::{CkTransport, Read};
-#[cfg(feature = "emulator")]
-use cktap_direct::emulator;
-use cktap_direct::discovery;
-use cktap_direct::secp256k1::hashes::{Hash as _, hex::DisplayHex};
-use cktap_direct::secp256k1::rand;
-use cktap_direct::{apdu::Error, commands::Certificate, rand_chaincode, CkTapCard};
 use std::io;
 use std::io::Write;
 
@@ -76,20 +76,23 @@ enum TapSignerCommand {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     env_logger::init();
-    
+
     // Parse CLI args first to see what command we're running
     let args: Vec<String> = std::env::args().collect();
     let needs_cvc = args.iter().any(|arg| {
-        matches!(arg.as_str(), "read" | "init" | "derive" | "backup" | "change" | "sign" | "new" | "unseal")
+        matches!(
+            arg.as_str(),
+            "read" | "init" | "derive" | "backup" | "change" | "sign" | "new" | "unseal"
+        )
     });
-    
+
     // Get CVC before connecting to device if needed
     let cvc_value = if needs_cvc {
         Some(get_cvc_from_env_or_prompt())
     } else {
         None
     };
-    
+
     // figure out what type of card we have before parsing cli args
     #[cfg(not(feature = "emulator"))]
     let mut card = discovery::find_first().await?;
@@ -113,7 +116,10 @@ async fn main() -> Result<(), Error> {
                 SatsCardCommand::New => {
                     let slot = sc.slot().expect("current slot number");
                     let chain_code = Some(rand_chaincode(rng));
-                    let response = &sc.new_slot(slot, chain_code, cvc_value.as_ref().unwrap()).await.unwrap();
+                    let response = &sc
+                        .new_slot(slot, chain_code, cvc_value.as_ref().unwrap())
+                        .await
+                        .unwrap();
                     println!("{}", response)
                 }
                 SatsCardCommand::Unseal => {
@@ -133,7 +139,13 @@ async fn main() -> Result<(), Error> {
                     dbg!(&ts);
                 }
                 TapSignerCommand::Certs => check_cert(ts).await,
-                TapSignerCommand::Read => read(ts, Some(cvc_value.as_ref().unwrap_or(&"".to_string()).clone())).await,
+                TapSignerCommand::Read => {
+                    read(
+                        ts,
+                        Some(cvc_value.as_ref().unwrap_or(&"".to_string()).clone()),
+                    )
+                    .await
+                }
                 TapSignerCommand::Init => {
                     let chain_code = rand_chaincode(rng);
                     let response = &ts.init(chain_code, cvc_value.as_ref().unwrap()).await;
@@ -142,25 +154,34 @@ async fn main() -> Result<(), Error> {
                 TapSignerCommand::Derive { path } => {
                     match &ts.derive(&path, cvc_value.as_ref().unwrap()).await {
                         Ok(response) => {
-                            println!("Derived public key at path m/{}:", 
+                            println!(
+                                "Derived public key at path m/{}:",
                                 path.iter()
                                     .map(|&p| format!("{}'", p))
                                     .collect::<Vec<_>>()
                                     .join("/")
                             );
-                            
-                            let pubkey_hex = response.pubkey.as_ref()
-                                .unwrap_or(&response.master_pubkey);
+
+                            let pubkey_hex =
+                                response.pubkey.as_ref().unwrap_or(&response.master_pubkey);
                             println!("Public key: {}", pubkey_hex.as_hex());
-                            
+
                             // Convert to Bitcoin address (assuming native segwit for BIP84)
                             if path.len() >= 1 && path[0] == 84 {
                                 if let Ok(pubkey) = bitcoin::PublicKey::from_slice(pubkey_hex) {
-                                    if let Ok(compressed) = bitcoin::CompressedPublicKey::try_from(pubkey) {
-                                        let address = bitcoin::Address::p2wpkh(&compressed, bitcoin::Network::Bitcoin);
+                                    if let Ok(compressed) =
+                                        bitcoin::CompressedPublicKey::try_from(pubkey)
+                                    {
+                                        let address = bitcoin::Address::p2wpkh(
+                                            &compressed,
+                                            bitcoin::Network::Bitcoin,
+                                        );
                                         println!("Bitcoin address (mainnet): {}", address);
-                                        
-                                        let testnet_address = bitcoin::Address::p2wpkh(&compressed, bitcoin::Network::Testnet);
+
+                                        let testnet_address = bitcoin::Address::p2wpkh(
+                                            &compressed,
+                                            bitcoin::Network::Testnet,
+                                        );
                                         println!("Bitcoin address (testnet): {}", testnet_address);
                                     }
                                 }
@@ -235,6 +256,6 @@ fn cvc() -> String {
 fn get_cvc_from_env_or_prompt() -> String {
     match std::env::var("CKTAP_CVC") {
         Ok(cvc) => cvc,
-        Err(_) => cvc()
+        Err(_) => cvc(),
     }
 }

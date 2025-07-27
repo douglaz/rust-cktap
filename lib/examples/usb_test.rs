@@ -4,15 +4,18 @@ use rust_cktap::CkTapCard;
 #[tokio::main]
 async fn main() -> Result<(), rust_cktap::Error> {
     env_logger::init();
-    
+
     println!("Searching for CCID devices...");
-    
+
     // List all devices
     match discovery::list_devices() {
         Ok(devices) => {
             println!("Found {} CCID device(s):", devices.len());
             for device in devices {
-                println!("  - Vendor: {:#06x}, Product: {:#06x}", device.vendor_id, device.product_id);
+                println!(
+                    "  - Vendor: {:#06x}, Product: {:#06x}",
+                    device.vendor_id, device.product_id
+                );
                 if let Some(manufacturer) = device.manufacturer {
                     println!("    Manufacturer: {}", manufacturer);
                 }
@@ -29,9 +32,9 @@ async fn main() -> Result<(), rust_cktap::Error> {
             eprintln!("Error listing devices: {}", e);
         }
     }
-    
+
     println!("\nConnecting to first available card...");
-    
+
     // Connect to first card
     let card = match discovery::find_first().await {
         Ok(card) => card,
@@ -44,10 +47,10 @@ async fn main() -> Result<(), rust_cktap::Error> {
             return Err(e);
         }
     };
-    
+
     println!("Successfully connected!");
     println!("Card type: {:?}", card);
-    
+
     // Try to get status
     match card {
         CkTapCard::TapSigner(mut ts) => {
@@ -94,6 +97,6 @@ async fn main() -> Result<(), rust_cktap::Error> {
             }
         }
     }
-    
+
     Ok(())
 }
