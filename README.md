@@ -1,4 +1,4 @@
-# rust-cktap (Pure Rust Fork)
+# rust-cktap (Direct USB Fork)
 
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](https://github.com/notmandatory/rust-cktap/blob/master/LICENSE)
 [![CI](https://github.com/notmandatory/rust-cktap/actions/workflows/test.yml/badge.svg)](https://github.com/notmandatory/rust-cktap/actions/workflows/test.yml)
@@ -9,9 +9,9 @@ for use with [SATSCARD], [TAPSIGNER], and [SATSCHIP] products.
 
 ## Fork Differences
 
-This fork replaces the PC/SC dependency with a pure Rust USB CCID implementation. The main differences from upstream are:
+This fork replaces the PC/SC dependency with a direct USB CCID implementation. The main differences from upstream are:
 
-- **Pure Rust Implementation**: No external PC/SC library dependencies
+- **Direct USB Access**: Uses `rusb` (libusb wrapper) instead of PC/SC
 - **Static Binary Support**: Can compile to fully static musl binaries
 - **Direct USB Communication**: Uses `rusb` crate for USB access
 - **Native CCID Protocol**: Implements the USB CCID protocol directly
