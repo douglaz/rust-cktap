@@ -6,14 +6,15 @@ use commands::CkTransport;
 pub mod apdu;
 pub mod commands;
 pub mod factory_root_key;
+pub mod ccid;
+pub mod discovery;
+pub mod usb_transport;
 
 pub use bitcoin::secp256k1::{self, rand};
 
 #[cfg(feature = "emulator")]
 pub mod emulator;
 
-#[cfg(feature = "pcsc")]
-pub mod pcsc;
 pub mod sats_card;
 pub mod tap_signer;
 

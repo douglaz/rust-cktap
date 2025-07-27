@@ -4,9 +4,8 @@ use rpassword::read_password;
 use rust_cktap::commands::{CkTransport, Read};
 #[cfg(feature = "emulator")]
 use rust_cktap::emulator;
-#[cfg(not(feature = "emulator"))]
-use rust_cktap::pcsc;
-use rust_cktap::secp256k1::hashes::Hash as _;
+use rust_cktap::discovery;
+use rust_cktap::secp256k1::hashes::{Hash as _, hex::DisplayHex};
 use rust_cktap::secp256k1::rand;
 use rust_cktap::{apdu::Error, commands::Certificate, rand_chaincode, CkTapCard};
 use std::io;
@@ -76,9 +75,24 @@ enum TapSignerCommand {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    env_logger::init();
+    
+    // Parse CLI args first to see what command we're running
+    let args: Vec<String> = std::env::args().collect();
+    let needs_cvc = args.iter().any(|arg| {
+        matches!(arg.as_str(), "read" | "init" | "derive" | "backup" | "change" | "sign" | "new" | "unseal")
+    });
+    
+    // Get CVC before connecting to device if needed
+    let cvc_value = if needs_cvc {
+        Some(get_cvc_from_env_or_prompt())
+    } else {
+        None
+    };
+    
     // figure out what type of card we have before parsing cli args
     #[cfg(not(feature = "emulator"))]
-    let mut card = pcsc::find_first().await?;
+    let mut card = discovery::find_first().await?;
 
     // if emulator feature enabled override pcsc card
     #[cfg(feature = "emulator")]
@@ -99,12 +113,12 @@ async fn main() -> Result<(), Error> {
                 SatsCardCommand::New => {
                     let slot = sc.slot().expect("current slot number");
                     let chain_code = Some(rand_chaincode(rng));
-                    let response = &sc.new_slot(slot, chain_code, &cvc()).await.unwrap();
+                    let response = &sc.new_slot(slot, chain_code, cvc_value.as_ref().unwrap()).await.unwrap();
                     println!("{}", response)
                 }
                 SatsCardCommand::Unseal => {
                     let slot = sc.slot().expect("current slot number");
-                    let response = &sc.unseal(slot, &cvc()).await.unwrap();
+                    let response = &sc.unseal(slot, cvc_value.as_ref().unwrap()).await.unwrap();
                     println!("{}", response)
                 }
                 SatsCardCommand::Derive => {
@@ -119,23 +133,52 @@ async fn main() -> Result<(), Error> {
                     dbg!(&ts);
                 }
                 TapSignerCommand::Certs => check_cert(ts).await,
-                TapSignerCommand::Read => read(ts, Some(cvc())).await,
+                TapSignerCommand::Read => read(ts, Some(cvc_value.as_ref().unwrap_or(&"".to_string()).clone())).await,
                 TapSignerCommand::Init => {
                     let chain_code = rand_chaincode(rng);
-                    let response = &ts.init(chain_code, &cvc()).await;
+                    let response = &ts.init(chain_code, cvc_value.as_ref().unwrap()).await;
                     dbg!(response);
                 }
                 TapSignerCommand::Derive { path } => {
-                    dbg!(&ts.derive(&path, &cvc()).await);
+                    match &ts.derive(&path, cvc_value.as_ref().unwrap()).await {
+                        Ok(response) => {
+                            println!("Derived public key at path m/{}:", 
+                                path.iter()
+                                    .map(|&p| format!("{}'", p))
+                                    .collect::<Vec<_>>()
+                                    .join("/")
+                            );
+                            
+                            let pubkey_hex = response.pubkey.as_ref()
+                                .unwrap_or(&response.master_pubkey);
+                            println!("Public key: {}", pubkey_hex.as_hex());
+                            
+                            // Convert to Bitcoin address (assuming native segwit for BIP84)
+                            if path.len() >= 1 && path[0] == 84 {
+                                if let Ok(pubkey) = bitcoin::PublicKey::from_slice(pubkey_hex) {
+                                    if let Ok(compressed) = bitcoin::CompressedPublicKey::try_from(pubkey) {
+                                        let address = bitcoin::Address::p2wpkh(&compressed, bitcoin::Network::Bitcoin);
+                                        println!("Bitcoin address (mainnet): {}", address);
+                                        
+                                        let testnet_address = bitcoin::Address::p2wpkh(&compressed, bitcoin::Network::Testnet);
+                                        println!("Bitcoin address (testnet): {}", testnet_address);
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Error deriving key: {:?}", e);
+                        }
+                    }
                 }
 
                 TapSignerCommand::Backup => {
-                    let response = &ts.backup(&cvc()).await;
+                    let response = &ts.backup(cvc_value.as_ref().unwrap()).await;
                     println!("{:?}", response);
                 }
 
                 TapSignerCommand::Change { new_cvc } => {
-                    let response = &ts.change(&new_cvc, &cvc()).await;
+                    let response = &ts.change(&new_cvc, cvc_value.as_ref().unwrap()).await;
                     println!("{:?}", response);
                 }
                 TapSignerCommand::Sign { to_sign } => {
@@ -143,7 +186,7 @@ async fn main() -> Result<(), Error> {
                         rust_cktap::secp256k1::hashes::sha256::Hash::hash(to_sign.as_bytes())
                             .to_byte_array();
 
-                    let response = &ts.sign(digest, vec![], &cvc()).await;
+                    let response = &ts.sign(digest, vec![], cvc_value.as_ref().unwrap()).await;
                     println!("{:?}", response);
                 }
             }
@@ -187,4 +230,11 @@ fn cvc() -> String {
     io::stdout().flush().unwrap();
     let cvc = read_password().unwrap();
     cvc.trim().to_string()
+}
+
+fn get_cvc_from_env_or_prompt() -> String {
+    match std::env::var("CKTAP_CVC") {
+        Ok(cvc) => cvc,
+        Err(_) => cvc()
+    }
 }
