@@ -6,7 +6,9 @@ license = "MIT"
 
 [lib]
 name = "cktap_direct_ffi"
-crate-type = ["staticlib", "cdylib"]
+# Only staticlib is supported for musl target (our default)
+# For cdylib support, build with: cargo build --target x86_64-unknown-linux-gnu
+crate-type = ["staticlib"]
 
 [dependencies]
 cktap-direct = { path = "../lib" }
